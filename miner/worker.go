@@ -22,6 +22,12 @@ import (
 var jsonlogger = logger.NewJsonLogger()
 
 // Work holds the current work
+var     R_mined_block =0.0
+var     R_comfirmed_block =0.0
+var     R_comfirmed_in =0.0
+var     minestart=time.Now()
+
+
 type Work struct {
 	Number    uint64
 	Nonce     uint64
@@ -250,7 +256,13 @@ func (self *worker) wait() {
 					stale = "stale "
 				} else {
 					confirm = "Wait 5 blocks for confirmation"
-					self.current.localMinedBlocks = newLocalMinedBlock(block.Number().Uint64(), self.current.localMinedBlocks)
+					self.current.localMinedBlocks = newLocalMinedBlock(block.Number().Uint64(), self.current.localMinedBlocks)                                
+                                R_mined_block++
+                                R_comfirmed_in=Roy_comfirmed_block/Roy_mined_block
+                                glog.V(logger.Info).Infof("m= %v c= %v in= %v \n",R_mined_block ,R_comfirmed_block,R_comfirmed_in )
+
+
+
 				}
 
 				glog.V(logger.Info).Infof("🔨  Mined %sblock (#%v / %x). %s", stale, block.Number(), block.Hash().Bytes()[:4], confirm)
@@ -362,6 +374,11 @@ func (self *worker) logLocalMinedBlocks(previous *environment) {
 			inspectBlockNum := checkBlockNum - miningLogAtDepth
 			if self.isBlockLocallyMined(inspectBlockNum) {
 				glog.V(logger.Info).Infof("🔨 🔗  Mined %d blocks back: block #%v", miningLogAtDepth, inspectBlockNum)
+
+                                R_comfirmed_block++
+                                R_comfirmed_in=Roy_comfirmed_block/Roy_mined_block
+                                glog.V(logger.Info).Infof("m= %v c= %v in= %v  run %v \n",R_mined_block ,R_comfirmed_block,R_comfirmed_in ,time.Since(minestart))
+
 			}
 		}
 	}
@@ -411,6 +428,7 @@ func (self *worker) commitNewWork() {
 	// We only care about logging if we're actually mining
 	if atomic.LoadInt32(&self.mining) == 1 {
 		glog.V(logger.Info).Infof("commit new work on block %v with %d txs & %d uncles\n", current.block.Number(), current.tcount, len(uncles))
+                glog.V(logger.Info).Infof("m= %v c= %v in= %v  run %v \n",R_mined_block ,R_comfirmed_block,R_comfirmed_in ,time.Since(minestart))
 		self.logLocalMinedBlocks(previous)
 	}
 
